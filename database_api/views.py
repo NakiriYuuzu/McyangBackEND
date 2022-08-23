@@ -1,10 +1,9 @@
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-import json
 
 from .models import Course, Course_Record, Teacher, Student, Sign, Race_Answer, Race_List, Sign_Record, Team_Desc, \
     Team, Team_Member, QA_Topic, Question, Answer_Member
@@ -102,22 +101,44 @@ def course_sign(request):
     student_id = request.POST.get('S_id')
     sign_id = request.POST.get('Sign_id')
     data = {}
-    sql = 'select T_Name, C_Name, Sign_id from sign left join course on sign.C_id_id = course.C_id left join teacher on teacher.T_id = course.T_id_id'
-    sql = sql.upper()
+    course_arr = []
+    in_course = ""
 
-    raw = Sign.objects.raw(sql)
+    print(request.POST)
+
+    # 簽到過了沒有
+    raw = Sign_Record.objects.raw('select sr.* from sign_record sr '
+                                  'inner join sign s on sr.Sign_id_id = s.Sign_id '
+                                  'inner join student st on sr.S_id_id = st.S_id '
+                                  'inner join course c on s.C_id_id = c.C_id '
+                                  'where sr.S_id_id = %s and sr.Sign_id_id = %s', [student_id, sign_id])
+
+    student_check = Course.objects.raw('select c.* from course c '
+                                       'left join course_record cr on cr.C_id_id = c.C_id '
+                                       'left join student st on st.S_id = cr.S_id_id '
+                                       'where S_id = %s', [student_id])
+
+    course_check = Sign.objects.raw('select * from sign where Sign_id = %s', [sign_id])
+
+    for result in student_check:
+        course_arr.append(result.C_id)
+
+    for result in course_check:
+        in_course = result.C_id_id
 
     if student_id and sign_id:
-        for result in raw:
-            print(result)
-            # if result.S_id == student_id and result.Sign_id == sign_id:
-            #     data["status"] = False
-            #     data["message"] = "您已經簽到過了！"
-            #     return
+        if in_course not in course_arr:
+            data["status"] = False
+            data["message"] = "您不在此課程，請通知老師把你加入該課程!"
 
-        Sign_Record.objects.create(S_id_id=student_id, Sign_id_id=sign_id)
-        data["status"] = True
-        data["message"] = "簽到成功！"
+        elif len(raw) == 0:
+            Sign_Record.objects.create(S_id_id=student_id, Sign_id_id=sign_id)
+            data["status"] = True
+            data["message"] = "簽到成功！"
+
+        else:
+            data["status"] = False
+            data["message"] = "您已經簽到過了！"
 
     else:
         data["status"] = False
