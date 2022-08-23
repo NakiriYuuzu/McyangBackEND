@@ -1,0 +1,35 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/staic/bootstrap.css" type="text/css"/>
+</head>
+<body>
+    <h1>{{ student.S_id }} | {{student.S_Name}} | {{student.S_Email}}</h1>
+    <div class = "container">
+        <table class = "table table-striped table-bordered">
+            <tr>
+                <th>編號</th>
+                <th>標題</th>
+                <th>正文簡介</th>
+                <th>操作</th>
+            </tr>
+            {% for article in articles %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ student.S_Name }}</td>
+                    <td>{{ student.S_id }}</td>
+                    <td><a href="/get_id/{{ student.S_id  }}">更新</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+        {% for account in accounts %}
+                <tr>
+                    <td>{{ account.S_Name }}</td>
+                </tr>
+            {% endfor %}
+</body>
+</html>
